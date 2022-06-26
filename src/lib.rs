@@ -70,6 +70,10 @@ impl<'a, P: AsRef<Path>> Favicon<'a, P> {
     {
         let image = image::open(file).unwrap();
 
+        if image.width() != image.height() {
+            println!("The image is not square. This will result in rectangle like image.");
+        }
+
         Self {
             image,
             out_dir,
@@ -87,10 +91,10 @@ impl<'a, P: AsRef<Path>> Favicon<'a, P> {
         }
     }
 
-    pub fn scale_down(&self, preset: Preset<'a>) {
+    pub fn resize(&self, preset: Preset<'a>) {
         let scaled = self
             .image
-            .resize(preset.width, preset.height, FilterType::Nearest);
+            .resize(preset.width, preset.height, FilterType::Lanczos3);
         let mut output = File::create(preset.name).unwrap();
 
         scaled.write_to(&mut output, ImageFormat::Png).unwrap();
@@ -102,9 +106,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let favicon = Favicon::empty("fixtures/dice.png", "output.png");
+    fn it_resizes_an_image() {
+        let input_image = image::open("fixtures/rust.png").unwrap();
+        let input_height = input_image.height();
+        let input_width = input_image.width();
 
-        favicon.scale_down(APPLE_TOUCH_ICON_57);
+        let favicon = Favicon::empty("fixtures/rust.png", "tmp/output.png");
+        favicon.resize(APPLE_TOUCH_ICON_57);
+
+        let output_image = image::open(APPLE_TOUCH_ICON_57.name).unwrap();
+        let output_height = output_image.height();
+        let output_width = output_image.width();
+
+        assert_ne!(input_height, output_height, "image height has changed");
+        assert_ne!(input_width, output_width, "image width has changed");
+        assert_eq!(
+            output_width, APPLE_TOUCH_ICON_57.width,
+            "image width is equals to preset's"
+        );
     }
 }
