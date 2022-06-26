@@ -1,7 +1,7 @@
 use image::imageops::FilterType;
 use image::{DynamicImage, ImageFormat};
-use std::fs::File;
-use std::path::Path;
+use std::fs::{self, File};
+use std::path::{Path, PathBuf};
 
 pub const APPLE_TOUCH_ICON_57: Preset<'static> =
     Preset::new("apple_touch_icon-57.png", Format::Png, 57, 57);
@@ -57,13 +57,13 @@ impl<'a> Preset<'a> {
     }
 }
 
-pub struct Favicon<'a, P: AsRef<Path>> {
+pub struct Favicon<'a, P: AsRef<Path> + Copy> {
     pub(crate) image: DynamicImage,
     pub(crate) out_dir: P,
     pub(crate) presets: Vec<Preset<'a>>,
 }
 
-impl<'a, P: AsRef<Path>> Favicon<'a, P> {
+impl<'a, P: AsRef<Path> + Copy> Favicon<'a, P> {
     pub fn new(file: P, out_dir: P, presets: Vec<Preset<'a>>) -> Self
     where
         P: AsRef<Path>,
@@ -73,6 +73,8 @@ impl<'a, P: AsRef<Path>> Favicon<'a, P> {
         if image.width() != image.height() {
             println!("The image is not square. This will result in rectangle like image.");
         }
+
+        Favicon::create_output_dir(out_dir.clone());
 
         Self {
             image,
@@ -84,6 +86,12 @@ impl<'a, P: AsRef<Path>> Favicon<'a, P> {
     pub fn empty(file: P, out_dir: P) -> Self {
         let image = image::open(file).unwrap();
 
+        if image.width() != image.height() {
+            println!("The image is not square. This will result in rectangle like image.");
+        }
+
+        Favicon::create_output_dir(out_dir);
+
         Self {
             image,
             out_dir,
@@ -91,13 +99,37 @@ impl<'a, P: AsRef<Path>> Favicon<'a, P> {
         }
     }
 
-    pub fn resize(&self, preset: Preset<'a>) {
+    pub fn add_preset(&mut self, preset: Preset<'a>) {
+        self.presets.push(preset);
+    }
+
+    fn output_path(&self, filename: &str) -> PathBuf {
+        let mut path = PathBuf::new();
+
+        path.push(self.out_dir);
+        path.push(filename);
+
+        path
+    }
+
+    fn create_output_dir(out_dir: P) {
+        fs::create_dir_all(out_dir).unwrap();
+    }
+
+    fn resize(&self, preset: &'a Preset<'a>) {
         let scaled = self
             .image
             .resize(preset.width, preset.height, FilterType::Lanczos3);
-        let mut output = File::create(preset.name).unwrap();
+        let output_path = self.output_path(preset.name);
+        let mut output = File::create(output_path).unwrap();
 
         scaled.write_to(&mut output, ImageFormat::Png).unwrap();
+    }
+
+    pub fn resize_all(&self) {
+        for preset in self.presets.iter() {
+            self.resize(preset);
+        }
     }
 }
 
@@ -106,15 +138,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_resizes_an_image() {
+    fn resizes_an_image() {
         let input_image = image::open("fixtures/rust.png").unwrap();
         let input_height = input_image.height();
         let input_width = input_image.width();
 
-        let favicon = Favicon::empty("fixtures/rust.png", "tmp/output.png");
-        favicon.resize(APPLE_TOUCH_ICON_57);
+        let favicon = Favicon::empty("fixtures/rust.png", "tmp");
+        favicon.resize(&APPLE_TOUCH_ICON_57);
 
-        let output_image = image::open(APPLE_TOUCH_ICON_57.name).unwrap();
+        let output_filename = favicon.output_path(APPLE_TOUCH_ICON_57.name);
+        let output_image = image::open(output_filename).unwrap();
         let output_height = output_image.height();
         let output_width = output_image.width();
 
@@ -124,5 +157,16 @@ mod tests {
             output_width, APPLE_TOUCH_ICON_57.width,
             "image width is equals to preset's"
         );
+    }
+
+    #[test]
+    fn resizes_image_for_multiple_presets() {
+        let mut favicon = Favicon::empty("fixtures/rust.png", "tmp");
+
+        favicon.add_preset(APPLE_TOUCH_ICON_57);
+        favicon.add_preset(APPLE_TOUCH_ICON_152);
+        favicon.add_preset(APPLE_TOUCH_ICON_144);
+
+        favicon.resize_all();
     }
 }
