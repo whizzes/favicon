@@ -1,6 +1,8 @@
 use image::imageops::FilterType;
 use image::{DynamicImage, ImageFormat};
+use std::collections::HashMap;
 use std::fs::{self, File};
+use std::hash::Hasher;
 use std::path::{Path, PathBuf};
 
 pub const APPLE_TOUCH_ICON_57: Preset<'static> =
@@ -99,8 +101,31 @@ impl<'a, P: AsRef<Path> + Copy> Favicon<'a, P> {
         }
     }
 
+    pub fn exec(&self) {
+        let images = self.resize_all();
+
+        for (preset_name, image) in images.iter() {
+            let output_path = self.output_path(preset_name);
+            let mut output = File::create(output_path).unwrap();
+
+            image.write_to(&mut output, ImageFormat::Png).unwrap();
+        }
+    }
+
     pub fn add_preset(&mut self, preset: Preset<'a>) {
         self.presets.push(preset);
+    }
+
+    pub fn resize_all(&self) -> HashMap<String, DynamicImage> {
+        let mut images: HashMap<String, DynamicImage> = HashMap::default();
+
+        for preset in self.presets.iter() {
+            let image = self.resize(preset);
+
+            images.insert(preset.name.to_string(), image);
+        }
+
+        images
     }
 
     fn output_path(&self, filename: &str) -> PathBuf {
@@ -116,48 +141,16 @@ impl<'a, P: AsRef<Path> + Copy> Favicon<'a, P> {
         fs::create_dir_all(out_dir).unwrap();
     }
 
-    fn resize(&self, preset: &'a Preset<'a>) {
-        let scaled = self
+    fn resize(&self, preset: &'a Preset<'a>) -> DynamicImage {
+        self
             .image
-            .resize(preset.width, preset.height, FilterType::Lanczos3);
-        let output_path = self.output_path(preset.name);
-        let mut output = File::create(output_path).unwrap();
-
-        scaled.write_to(&mut output, ImageFormat::Png).unwrap();
-    }
-
-    pub fn resize_all(&self) {
-        for preset in self.presets.iter() {
-            self.resize(preset);
-        }
+            .resize(preset.width, preset.height, FilterType::Lanczos3)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn resizes_an_image() {
-        let input_image = image::open("fixtures/rust.png").unwrap();
-        let input_height = input_image.height();
-        let input_width = input_image.width();
-
-        let favicon = Favicon::empty("fixtures/rust.png", "tmp");
-        favicon.resize(&APPLE_TOUCH_ICON_57);
-
-        let output_filename = favicon.output_path(APPLE_TOUCH_ICON_57.name);
-        let output_image = image::open(output_filename).unwrap();
-        let output_height = output_image.height();
-        let output_width = output_image.width();
-
-        assert_ne!(input_height, output_height, "image height has changed");
-        assert_ne!(input_width, output_width, "image width has changed");
-        assert_eq!(
-            output_width, APPLE_TOUCH_ICON_57.width,
-            "image width is equals to preset's"
-        );
-    }
 
     #[test]
     fn resizes_image_for_multiple_presets() {
@@ -167,6 +160,6 @@ mod tests {
         favicon.add_preset(APPLE_TOUCH_ICON_152);
         favicon.add_preset(APPLE_TOUCH_ICON_144);
 
-        favicon.resize_all();
+        favicon.exec();
     }
 }
