@@ -4,9 +4,9 @@ description = "Build favicons for your website"
 authors = ["Esteban Borai <estebanborai@gmail.com>"]
 version = "0.1.0-draft-1"
 edition = "2021"
-repository = "https://github.com/EstebanBorai/favicon"
+repository = "https://github.com/whizzes/favicon"
 categories = ["web-programming"]
-homepage = "https://github.com/EstebanBorai/favicon"
+homepage = "https://github.com/whizzes/favicon"
 keywords = ["favicon", "images", "web", "website"]
 license = "MIT OR Apache-2.0"
 readme = "README.md"
@@ -14,4 +14,4 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = "0.24.2"
+image = "0.24.5"
