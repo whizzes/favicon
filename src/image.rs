@@ -5,22 +5,14 @@
 // use std::hash::Hasher;
 // use std::path::{Path, PathBuf};
 
-// pub const APPLE_TOUCH_ICON_57: Preset<'static> =
-//     Preset::new("apple_touch_icon-57.png", Format::Png, 57, 57);
-// pub const APPLE_TOUCH_ICON_60: Preset<'static> =
-//     Preset::new("apple_touch_icon-60.png", Format::Png, 60, 60);
-// pub const APPLE_TOUCH_ICON_72: Preset<'static> =
-//     Preset::new("apple_touch_icon-72.png", Format::Png, 70, 70);
-// pub const APPLE_TOUCH_ICON_76: Preset<'static> =
-//     Preset::new("apple_touch_icon-76.png", Format::Png, 76, 76);
-// pub const APPLE_TOUCH_ICON_114: Preset<'static> =
-//     Preset::new("apple_touch_icon-114.png", Format::Png, 114, 114);
-// pub const APPLE_TOUCH_ICON_120: Preset<'static> =
-//     Preset::new("apple_touch_icon-120.png", Format::Png, 120, 120);
-// pub const APPLE_TOUCH_ICON_144: Preset<'static> =
-//     Preset::new("apple_touch_icon-144.png", Format::Png, 144, 144);
-// pub const APPLE_TOUCH_ICON_152: Preset<'static> =
-//     Preset::new("apple_touch_icon-152.png", Format::Png, 152, 152);
+pub const APPLE_TOUCH_ICON_57: Preset = Preset::new_static("apple_touch_icon-57.png", 57, 57);
+pub const APPLE_TOUCH_ICON_60: Preset = Preset::new_static("apple_touch_icon-60.png", 60, 60);
+pub const APPLE_TOUCH_ICON_72: Preset = Preset::new_static("apple_touch_icon-72.png", 70, 70);
+pub const APPLE_TOUCH_ICON_76: Preset = Preset::new_static("apple_touch_icon-76.png", 76, 76);
+pub const APPLE_TOUCH_ICON_114: Preset = Preset::new_static("apple_touch_icon-114.png", 114, 114);
+pub const APPLE_TOUCH_ICON_120: Preset = Preset::new_static("apple_touch_icon-120.png", 120, 120);
+pub const APPLE_TOUCH_ICON_144: Preset = Preset::new_static("apple_touch_icon-144.png", 144, 144);
+pub const APPLE_TOUCH_ICON_152: Preset = Preset::new_static("apple_touch_icon-152.png", 152, 152);
 
 // pub const FAVICON: Preset<'static> = Preset::new("favicon.ico", Format::Ico, 64, 64);
 // pub const FAVICON_16: Preset<'static> = Preset::new("favicon-16.png", Format::Png, 16, 16);
@@ -164,19 +156,71 @@
 //     }
 // }
 
-use std::path::Path;
+use std::borrow::Cow;
+use std::fs::File;
+use std::path::PathBuf;
+use std::str::FromStr;
 
-pub fn resize<P: AsRef<Path>>(path: P, out: P) {
-    use std::fs::File;
+use anyhow::{Error, Result};
+use image::imageops::FilterType;
+use image::{DynamicImage, ImageOutputFormat};
 
-    use image::imageops::FilterType;
-    use image::{open, ImageOutputFormat};
+pub struct Preset {
+    pub(crate) name: Cow<'static, str>,
+    pub(crate) height: u32,
+    pub(crate) width: u32,
+}
 
-    let dyn_image = open(path).unwrap();
-    let resized = dyn_image.resize(150, 150, FilterType::Triangle);
-    let mut output = File::create(out).unwrap();
+impl Preset {
+    pub const fn new_static(name: &'static str, height: u32, width: u32) -> Self {
+        Self {
+            name: Cow::Borrowed(name),
+            height,
+            width,
+        }
+    }
+}
 
-    resized
-        .write_to(&mut output, ImageOutputFormat::Png)
-        .unwrap();
+pub struct Favicon {
+    pub(crate) image: DynamicImage,
+    pub(crate) out: PathBuf,
+    pub(crate) job_queue: Vec<Preset>,
+}
+
+impl Favicon {
+    pub fn new(file: PathBuf, out_dir: PathBuf) -> Result<Self> {
+        let image = image::open(file).unwrap();
+
+        if image.width() != image.height() {
+            return Err(Error::msg("The image is not square."));
+        }
+
+        Ok(Self {
+            image,
+            out: out_dir,
+            job_queue: Vec::with_capacity(1),
+        })
+    }
+
+    pub fn push_job(&mut self, preset: Preset) {
+        self.job_queue.push(preset);
+    }
+
+    pub fn process(&self) -> Result<()> {
+        for preset in self.job_queue.iter() {
+            let mut filename = self.out.clone();
+            filename.push(PathBuf::from_str(preset.name.as_ref()).unwrap());
+
+            let mut output = File::create(filename).unwrap();
+            let resized = self
+                .image
+                .resize(preset.width, preset.height, FilterType::Triangle);
+
+            resized
+                .write_to(&mut output, ImageOutputFormat::Png)
+                .unwrap();
+        }
+
+        Ok(())
+    }
 }

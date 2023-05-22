@@ -2,9 +2,10 @@ mod image;
 
 use std::path::PathBuf;
 
+use anyhow::Result;
 use clap::Parser;
 
-use crate::image::resize;
+use crate::image::Favicon;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -19,8 +20,11 @@ struct Args {
     output: PathBuf,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
+    let favicon = Favicon::new(args.file, args.output)?;
 
-    resize(&args.file, &args.output);
+    favicon.process()?;
+
+    Ok(())
 }
