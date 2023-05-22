@@ -5,24 +5,50 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::Parser;
+use clap::builder::PossibleValue;
+use clap::{Parser, ValueEnum};
 
 use crate::image::Favicon;
 
-#[derive(Clone, Parser, Debug)]
+#[derive(Clone, Parser, Debug, Default)]
 pub enum Set {
     /// A set of Favicons that includes 16x16 and 32x32
+    #[default]
     Small,
     /// Full set of Favicons that includes a favicon for each client
     Full,
 }
 
-impl From<OsString> for Set {
-    fn from(s: OsString) -> Self {
-        match s.to_str().unwrap() {
-            "small" => Set::Small,
-            "full" => Set::Full,
-            _ => unreachable!(),
+impl ValueEnum for Set {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[Set::Small, Set::Full]
+    }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        Some(match self {
+            Self::Small => {
+                PossibleValue::new("small").help("A set of Favicons that includes 16x16 and 32x32")
+            }
+            Self::Full => PossibleValue::new("full")
+                .help("Full set of Favicons that includes a favicon for each client"),
+        })
+    }
+}
+
+impl TryFrom<OsString> for Set {
+    type Error = anyhow::Error;
+
+    fn try_from(s: OsString) -> Result<Self> {
+        use anyhow::Error;
+
+        let Some(string) = s.to_str() else {
+            return Err(Error::msg("String is not UTF-8."));
+        };
+
+        match string {
+            "small" => Ok(Set::Small),
+            "full" => Ok(Set::Full),
+            _ => Err(Error::msg("Invalid set. Values are `small` or `full`.")),
         }
     }
 }
@@ -31,21 +57,22 @@ impl From<OsString> for Set {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Name of the person to greet
-    #[arg(short = 'f', long)]
+    /// Input file to create favicons from
+    #[arg(index = 1)]
     file: PathBuf,
 
-    /// Name of the person to greet
+    /// Output directory to put favicons
     #[arg(short = 'o', long)]
     output: PathBuf,
 
-    #[arg(short = 's', long, default_value = "small")]
+    /// Colllection of favicons to generate
+    #[arg(short = 's', long)]
     set: Set,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let mut favicon = Favicon::new(args.file, args.output)?;
+    let mut favicon = Favicon::new(args.file)?;
 
     match args.set {
         Set::Small => {
@@ -85,7 +112,7 @@ fn main() -> Result<()> {
         }
     }
 
-    favicon.process()?;
+    favicon.process(args.output)?;
 
     Ok(())
 }
