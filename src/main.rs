@@ -59,7 +59,8 @@ fn main() -> Result<()> {
                 APPLE_TOUCH_ICON_114, APPLE_TOUCH_ICON_120, APPLE_TOUCH_ICON_144,
                 APPLE_TOUCH_ICON_152, APPLE_TOUCH_ICON_57, APPLE_TOUCH_ICON_60,
                 APPLE_TOUCH_ICON_72, APPLE_TOUCH_ICON_76, FAVICON, FAVICON_128, FAVICON_16,
-                FAVICON_196, MS_TILE_144, MS_TILE_310, MS_TILE_310X150, MS_TILE_70,
+                FAVICON_196, FAVICON_96, MS_TILE_144, MS_TILE_150, MS_TILE_310, MS_TILE_310X150,
+                MS_TILE_70,
             };
 
             // TODO: Provide a `queue_many` method
@@ -72,13 +73,15 @@ fn main() -> Result<()> {
             favicon.queue(APPLE_TOUCH_ICON_72);
             favicon.queue(APPLE_TOUCH_ICON_76);
             favicon.queue(FAVICON);
-            favicon.queue(FAVICON_128);
             favicon.queue(FAVICON_16);
+            favicon.queue(FAVICON_96);
+            favicon.queue(FAVICON_128);
             favicon.queue(FAVICON_196);
             favicon.queue(MS_TILE_144);
             favicon.queue(MS_TILE_310);
             favicon.queue(MS_TILE_310X150);
             favicon.queue(MS_TILE_70);
+            favicon.queue(MS_TILE_150);
         }
     }
 
