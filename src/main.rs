@@ -45,7 +45,7 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let favicon = Favicon::new(args.file, args.output)?;
+    let mut favicon = Favicon::new(args.file, args.output)?;
 
     match args.set {
         Set::Small => {

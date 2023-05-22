@@ -1,6 +1,29 @@
+use std::borrow::Cow;
+
 use image::ImageOutputFormat;
 
-use super::Preset;
+pub struct Preset {
+    pub(crate) name: Cow<'static, str>,
+    pub(crate) format: ImageOutputFormat,
+    pub(crate) height: u32,
+    pub(crate) width: u32,
+}
+
+impl Preset {
+    pub const fn new_static(
+        name: &'static str,
+        format: ImageOutputFormat,
+        height: u32,
+        width: u32,
+    ) -> Self {
+        Self {
+            name: Cow::Borrowed(name),
+            format,
+            height,
+            width,
+        }
+    }
+}
 
 pub const APPLE_TOUCH_ICON_57: Preset =
     Preset::new_static("apple_touch_icon-57.png", ImageOutputFormat::Png, 57, 57);
