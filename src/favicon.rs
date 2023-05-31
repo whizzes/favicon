@@ -32,6 +32,10 @@ impl Favicon {
         self.job_queue.push(preset);
     }
 
+    pub fn queue_many(&mut self, presets: Vec<Preset>) {
+        let _ = &self.job_queue.extend_from_slice(&presets);
+    }
+
     pub fn process(&self, out_dir: PathBuf) -> Result<()> {
         for preset in self.job_queue.iter() {
             let mut filename = out_dir.clone();

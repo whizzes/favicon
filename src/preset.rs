@@ -1,6 +1,6 @@
 use image::ImageOutputFormat;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone)]
 pub struct Preset {
     pub(crate) name: &'static str,
     pub(crate) format: ImageOutputFormat,
