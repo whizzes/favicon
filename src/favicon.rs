@@ -33,7 +33,7 @@ impl Favicon {
     }
 
     pub fn queue_many(&mut self, presets: Vec<Preset>) {
- self.job_queue.extend_from_slice(&presets);
+        self.job_queue.extend_from_slice(&presets);
     }
 
     pub fn process(&self, out_dir: PathBuf) -> Result<()> {
