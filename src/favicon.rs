@@ -5,7 +5,6 @@ use std::str::FromStr;
 use anyhow::{Error, Result};
 use image::imageops::FilterType;
 use image::DynamicImage;
-use image::ImageOutputFormat;
 
 use crate::preset::Preset;
 
@@ -57,6 +56,7 @@ impl Favicon {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use image::ImageOutputFormat;
 
     #[test]
     fn test_queue_many() {
