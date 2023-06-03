@@ -1,4 +1,4 @@
-mod image;
+mod favicon;
 mod preset;
 
 use std::ffi::OsString;
@@ -8,7 +8,7 @@ use anyhow::Result;
 use clap::builder::PossibleValue;
 use clap::{Parser, ValueEnum};
 
-use crate::image::Favicon;
+use crate::favicon::Favicon;
 
 #[derive(Clone, Parser, Debug, Default)]
 pub enum Set {
