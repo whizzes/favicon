@@ -35,7 +35,7 @@ impl Favicon {
     pub fn process(&self, out_dir: PathBuf) -> Result<()> {
         for preset in self.job_queue.iter() {
             let mut filename = out_dir.clone();
-            filename.push(PathBuf::from_str(preset.name.as_ref())?);
+            filename.push(PathBuf::from_str(preset.name)?);
 
             let mut output = File::create(filename)?;
             let resized = self
@@ -76,17 +76,13 @@ mod tests {
         ));
 
         assert_eq!(favicon.job_queue.len(), 2);
-        assert_eq!(favicon.job_queue[0], Preset::new(
-            "favicon-16x16.png",
-            ImageOutputFormat::Png,
-            16,
-            16,
-        ));
-        assert_eq!(favicon.job_queue[1], Preset::new(
-            "favicon-32x32.png",
-            ImageOutputFormat::Png,
-            32,
-            32,
-        ));
+        assert_eq!(
+            favicon.job_queue[0],
+            Preset::new("favicon-16x16.png", ImageOutputFormat::Png, 16, 16,)
+        );
+        assert_eq!(
+            favicon.job_queue[1],
+            Preset::new("favicon-32x32.png", ImageOutputFormat::Png, 32, 32,)
+        );
     }
 }
