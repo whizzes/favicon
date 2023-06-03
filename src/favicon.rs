@@ -62,9 +62,9 @@ mod tests {
     fn test_queue_many() {
         let mut favicon = Favicon::new(PathBuf::from("fixtures/rust.png")).unwrap();
         let presets = vec![
-            Preset::new_static("fixtures/rust.png", ImageOutputFormat::Png, 100, 100),
-            Preset::new_static("fixtures/rust.png", ImageOutputFormat::Png, 200, 200),
-            Preset::new_static("fixtures/rust.png", ImageOutputFormat::Png, 300, 300),
+            Preset::new("fixtures/rust.png", ImageOutputFormat::Png, 100, 100),
+            Preset::new("fixtures/rust.png", ImageOutputFormat::Png, 200, 200),
+            Preset::new("fixtures/rust.png", ImageOutputFormat::Png, 300, 300),
         ];
         favicon.queue_many(presets);
 
