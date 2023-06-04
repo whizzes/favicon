@@ -32,6 +32,10 @@ impl Favicon {
         self.job_queue.push(preset);
     }
 
+    pub fn queue_many(&mut self, presets: Vec<Preset>) {
+        self.job_queue.extend_from_slice(&presets);
+    }
+
     pub fn process(&self, out_dir: PathBuf) -> Result<()> {
         for preset in self.job_queue.iter() {
             let mut filename = out_dir.clone();
@@ -51,9 +55,9 @@ impl Favicon {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use image::ImageOutputFormat;
+
+    use std::path::PathBuf;
 
     use crate::favicon::Favicon;
     use crate::preset::Preset;
@@ -84,5 +88,18 @@ mod tests {
             favicon.job_queue[1],
             Preset::new("favicon-32x32.png", ImageOutputFormat::Png, 32, 32,)
         );
+    }
+
+    #[test]
+    fn test_queue_many() {
+        let mut favicon = Favicon::new(PathBuf::from("fixtures/rust.png")).unwrap();
+        let presets = vec![
+            Preset::new("fixtures/rust.png", ImageOutputFormat::Png, 100, 100),
+            Preset::new("fixtures/rust.png", ImageOutputFormat::Png, 200, 200),
+            Preset::new("fixtures/rust.png", ImageOutputFormat::Png, 300, 300),
+        ];
+        favicon.queue_many(presets);
+
+        assert_eq!(favicon.job_queue.len(), 3);
     }
 }
